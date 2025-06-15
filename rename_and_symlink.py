@@ -1,8 +1,14 @@
+from dotenv import load_dotenv
+from pathlib import Path
 import os
 import time
 import re
 from pathlib import Path
 from guessit import guessit
+
+# Charge le fichier .env situé dans le même dossier que le script
+dotenv_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=dotenv_path)
 
 # === Config ===
 SOURCE = Path(os.getenv("SOURCE", "/mnt/cloudmedia"))
@@ -87,7 +93,7 @@ def process_file(filepath: Path):
     make_symlink(filepath, target_path)
 
 def cleanup_broken_symlinks(path: Path):
-    """Remove broken symlinks and then clean up empty directories."""
+    """Remove broken symlinks and then clean up empty directories, except the root path itself."""
     print(f"[INFO] Cleaning broken symlinks in: {path}")
     for root, _, files in os.walk(path):
         for file in files:
@@ -103,15 +109,19 @@ def cleanup_broken_symlinks(path: Path):
             except Exception as e:
                 print(f"[ERROR] Checking symlink {full_path}: {e}")
 
-    # Walk bottom-up to remove empty folders
+    # Walk bottom-up to remove empty folders, but never remove the root directory itself
     for root, dirs, files in os.walk(path, topdown=False):
         dir_path = Path(root)
+        if dir_path == path:
+            continue  # Ne jamais supprimer le dossier racine !
         if not any(dir_path.iterdir()):
             try:
                 dir_path.rmdir()
                 print(f"[CLEAN] Removed empty directory: {dir_path}")
             except Exception as e:
                 print(f"[ERROR] Could not remove {dir_path}: {e}")
+
+
 # === Main ===
 
 def main():

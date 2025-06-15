@@ -1,67 +1,60 @@
-# Jellyfin Symlink Helper
+# Jellyfin Symlink Helper Lite
 
-This project provides a Dockerized Python script to:
+Note : this is a lite version (no docker) of the original Vijai Djearam's repository [jellyfin-symlink-helper](https://github.com/vijaidjearam/jellyfin-symlink-helper)
+
+## 📦 Overview
+
+This script :
 - Rename media files using [guessit](https://github.com/guessit-io/guessit)
 - Create symbolic links in a structure compatible with [Jellyfin](https://jellyfin.org/)
 - Clean up broken symlinks automatically
 - Only process newly added or recently modified files
 
+So this helper tool is useful when downloaded or unmanaged media needs to be cleaned up, renamed, and symlinked into a structured format for Jellyfin to consume easily.
+
 ---
 
-## 🚀 Quick Start
-
-### 1. Clone the Repository
+### 1. Install the dependencies
 
 ```bash
-git clone https://github.com/vijaidjearam/jellyfin-symlink-helper.git
+sudo apt install python3-guessit python3-dotenv
+```
+
+### 2. Clone the repository
+
+```bash
+git clone https://github.com/brahimmachkouri/jellyfin-symlink-helper.git
 cd jellyfin-symlink-helper
 ```
 
-### 2. Set Up Environment Variables
-Copy .env.example to .env and edit it with your actual paths:
+### 3. Set up the environment variables in the .env file
 
-```bash
+Create a `.env` file in the same directory as the python file and define the following variables:
 
-cp .env.example .env
-nano .env
+| Variable    | Description                             | Example              |
+|-------------|-----------------------------------------|----------------------|
+| `SOURCE`    | Path to the source media directory      | `/mnt/media`     |
+| `DEST_BASE` | Path to the destination directory       | `/srv/jellyfin`      |
+
+### Example `.env` file
+
+```env
+SOURCE=/mnt/media
+DEST_BASE=/srv/jellyfin
 ```
 
-Example:
+> 🔒 **Note**: Ensure appropriate permissions are set so the script can read from `SOURCE` and write to `DEST_BASE`.
 
-```
-SOURCE=/mnt/cloudmedia
-DEST_BASE=/Data
-```
-
-### 3. Build the Docker Image
-
-```bash
-docker-compose build
-```
-
-### 4. Run the Script
-```bash
-
-docker-compose up
-```
-
-You can also run it manually without logs:
-
-```bash
-docker-compose run --rm symlink-processor
-```
-
-## 🔁 Automate with Cron
+## 🔁 Automate with cron
 To run the script periodically:
 
 ```bash
 crontab -e
 ```
 
-Add a line like:
-
-```bash
-0 * * * * cd /path/to/jellyfin-symlink-helper && docker-compose run --rm symlink-processor >> /var/log/symlink_processor.log 2>&1
+Then add this line :
+```
+0 * * * * /usr/bin/python3  /path/to/jellyfin-symlink-helper/rename_and_symlink.py >> /path/to/jellyfin-symlink-helper/symlink_processor.log 2>&1
 ```
 
 
@@ -78,105 +71,8 @@ Add a line like:
 
 - Broken symlinks in **$DEST_BASE** are automatically deleted.
 
-## 📂 Volume Permissions
-
-Ensure your Docker user has read access to **$SOURCE** and write access to **$DEST_BASE**.
-
----
-
-# 🧩 Jellyfin Symlink Helper Docker container from DockerHub
-
-This project deploys a Docker container using the [`vijaidj/jellyfin-symlink-helper`](https://hub.docker.com/r/vijaidj/jellyfin-symlink-helper) image. It scans a source directory for media files and creates symbolic links in a destination directory, enabling Jellyfin to correctly recognize and organize the content.
-
----
-
-## 📦 Overview
-
-This helper tool is useful when downloaded or unmanaged media needs to be cleaned up, renamed, and symlinked into a structured format for Jellyfin to consume easily.
-
----
-
-## 🐳 Docker Compose Setup
-
-### `docker-compose.yml`
-
-```yaml
-version: '3.8'
-
-services:
-  symlink-processor:
-    image: vijaidj/jellyfin-symlink-helper:latest
-    container_name: symlink-processor
-    environment:
-      - SOURCE=${SOURCE}
-      - DEST_BASE=${DEST_BASE}
-    volumes:
-      - ${SOURCE}:${SOURCE}:ro
-      - ${DEST_BASE}:${DEST_BASE}
-    restart: unless-stopped
-```
-
----
-
-## 🌱 Environment Variables
-
-Create a `.env` file in the same directory as your `docker-compose.yml` and define the following variables:
-
-| Variable    | Description                             | Example              |
-|-------------|-----------------------------------------|----------------------|
-| `SOURCE`    | Path to the source media directory      | `/srv/downloads`     |
-| `DEST_BASE` | Path to the destination directory       | `/srv/jellyfin`      |
-
-### Example `.env` file
-
-```env
-SOURCE=/srv/downloads
-DEST_BASE=/srv/jellyfin
-```
-
-> 🔒 **Note**: The container mounts both paths. Ensure appropriate permissions are set so the container can read from `SOURCE` and write to `DEST_BASE`.
-
----
-
-## ▶️ Usage
-
-1. Create your `.env` file as described above.
-2. Deploy the container:
-
-   ```bash
-   docker-compose up -d
-   ```
-
-3. The symlink helper will:
-   - Scan media files in the source folder.
-   - Parse names and generate symlinks.
-   - Place symlinks in the destination folder for Jellyfin to detect.
-
----
-
-## ♻️ Restart Policy
-
-The container uses the following restart policy:
-
-```yaml
-restart: unless-stopped
-```
-
-This ensures the container restarts automatically on system reboot or crash, unless manually stopped.
-
----
-
 ## 🛠️ Troubleshooting
 
 - **No symlinks created?**
   - Ensure your source folder is not empty.
   - Validate file naming for compatibility.
-- **Permission issues?**
-  - Check that Docker can read from `SOURCE` and write to `DEST_BASE`.
-- **Logs for diagnosis:**
-
-  ```bash
-  docker logs symlink-processor
-  ```
-
-
