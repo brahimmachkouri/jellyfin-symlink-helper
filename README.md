@@ -43,6 +43,8 @@ SOURCE=/mnt/media
 DEST_BASE=/srv/jellyfin
 ```
 
+In jellyfin, define the DEST_BASE as your media library path.
+
 > 🔒 **Note**: Ensure appropriate permissions are set so the script can read from `SOURCE` and write to `DEST_BASE`.
 
 ## 🔁 Automate with cron
